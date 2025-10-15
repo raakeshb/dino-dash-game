@@ -1,13 +1,14 @@
-# 🦖 Dino Dash
+# 🎮 Custom Jump Game
 
-A fun, browser-based dinosaur jumping game inspired by Chrome's offline dinosaur game. Jump over obstacles and try to beat your high score!
+A fun, browser-based jumping game where you can use your own custom images as the player and obstacles! Inspired by Chrome's offline dinosaur game.
 
 ![Game Preview](https://img.shields.io/badge/status-playable-brightgreen)
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
 
-## 🎮 Features
+## 🎨 Features
 
+- **Custom Characters**: Upload your own images for the player and obstacles!
 - **Simple Controls**: Just press SPACE or click to jump!
 - **Progressive Difficulty**: Game speed increases as your score gets higher
 - **High Score Tracking**: Your best score is saved locally
@@ -20,7 +21,8 @@ A fun, browser-based dinosaur jumping game inspired by Chrome's offline dinosaur
 ### Method 1: Direct File Opening
 1. Download the `index.html` file
 2. Double-click the file to open it in your default browser
-3. Start playing immediately!
+3. Upload your custom images
+4. Start playing!
 
 ### Method 2: Using a Local Server (Recommended)
 
@@ -66,12 +68,24 @@ npx http-server
 
 ## 🎯 How to Play
 
-1. **Start**: The game starts automatically when you load the page
-2. **Jump**: Press SPACE bar or click anywhere on the canvas
-3. **Avoid**: Don't hit the red obstacles!
-4. **Score**: Each obstacle you pass adds 1 point
-5. **Speed**: Game gets faster every 10 points
-6. **Game Over**: Hit an obstacle and try to beat your high score!
+1. **Upload Images**: 
+   - Click "Choose File" next to "Upload Player Image" and select your character image
+   - Click "Choose File" next to "Upload Obstacle Image" and select your obstacle image
+2. **Start**: The game starts automatically once both images are loaded
+3. **Jump**: Press SPACE bar or click anywhere on the canvas
+4. **Avoid**: Don't hit the obstacles!
+5. **Score**: Each obstacle you pass adds 1 point
+6. **Speed**: Game gets faster every 10 points
+7. **Game Over**: Hit an obstacle and try to beat your high score!
+
+## 🖼️ Image Tips
+
+For best results with your custom images:
+- Use PNG files with transparent backgrounds
+- Recommended player image size: around 100x100 to 200x200 pixels
+- Recommended obstacle image size: similar to player size
+- Images will be automatically resized to fit the game
+- Make sure images have clear silhouettes for better gameplay visibility
 
 ## 📁 Project Structure
 
@@ -87,6 +101,7 @@ dino-dash-game/
 - **HTML5 Canvas** - For rendering game graphics
 - **CSS3** - For styling and animations
 - **Vanilla JavaScript** - For game logic and physics
+- **FileReader API** - For loading custom images
 - **LocalStorage API** - For saving high scores
 
 ## 🎨 Game Mechanics
@@ -96,12 +111,14 @@ dino-dash-game/
 - **Dynamic Spawning**: Obstacles appear at regular intervals
 - **Parallax Clouds**: Background elements for depth
 - **Score System**: Points awarded for each passed obstacle
+- **Image Rendering**: Custom images rendered on canvas
 
 ## 🏆 Tips for High Scores
 
 - Time your jumps carefully - don't jump too early or too late
 - Stay calm as the speed increases
 - Focus on the next obstacle, not your score
+- Use images with clear shapes for better visibility
 - Practice makes perfect!
 
 ## 📝 Customization
@@ -113,6 +130,8 @@ gameSpeed = 5;           // Initial speed
 dino.jumpPower = -12;    // Jump height
 dino.gravity = 0.6;      // Gravity strength
 frameCount % 120 === 0   // Obstacle spawn rate (lower = more frequent)
+dino.width = 60;         // Player width
+dino.height = 80;        // Player height
 ```
 
 ## 🐛 Known Issues
@@ -123,10 +142,12 @@ None at the moment! If you find any bugs, please report them.
 
 Feel free to fork this project and add your own features! Some ideas:
 - Add sound effects
-- Create different obstacle types
+- Create multiple obstacle patterns
 - Add power-ups
 - Implement different difficulty modes
 - Add mobile touch controls
+- Support for animated sprites
+- Multiple character selection
 
 ## 📄 License
 
@@ -134,7 +155,7 @@ This project is open source and available under the MIT License.
 
 ## 🎉 Enjoy!
 
-Have fun playing Dino Dash! Try to beat your high score and challenge your friends!
+Have fun playing with your custom characters! Try different images and challenge your friends!
 
 ---
 
