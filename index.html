@@ -172,13 +172,14 @@
         
         <canvas id="gameCanvas" class="game-canvas" width="800" height="400"></canvas>
         <div class="score-board">
-            Score: <span id="score">0</span> | High Score: <span id="highScore">0</span>
+            Score: <span id="score">0</span> | High Score: <span id="highScore">0</span> | Kills: <span id="kills">0</span>
         </div>
-        <div class="instructions">Press SPACE or click to jump!</div>
+        <div class="instructions">Press SPACE or click to jump! Jump on obstacles to squash them! 💀</div>
         
         <div class="game-over-screen" id="gameOverScreen">
             <h2>Game Over!</h2>
             <p style="font-size: 1.5em; margin-bottom: 20px;">Final Score: <span id="finalScore">0</span></p>
+            <p style="font-size: 1.2em; margin-bottom: 20px;">Enemies Squashed: <span id="finalKills">0</span> 💀</p>
             <button onclick="restartGame()">Play Again</button>
         </div>
     </div>
@@ -190,8 +191,10 @@
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
         const highScoreElement = document.getElementById('highScore');
+        const killsElement = document.getElementById('kills');
         const gameOverScreen = document.getElementById('gameOverScreen');
         const finalScoreElement = document.getElementById('finalScore');
+        const finalKillsElement = document.getElementById('finalKills');
         const bgMusic = document.getElementById('bgMusic');
         const muteBtn = document.getElementById('muteBtn');
         const volumeSlider = document.getElementById('volumeSlider');
@@ -203,6 +206,7 @@
 
         let gameRunning = false;
         let score = 0;
+        let kills = 0;
         let highScore = localStorage.getItem('dinoHighScore') || 0;
         highScoreElement.textContent = highScore;
 
@@ -305,23 +309,48 @@
         class Obstacle {
             constructor() {
                 this.width = 50;
+                this.originalHeight = 70;
                 this.height = 70;
                 this.x = canvas.width;
                 this.y = ground.y - this.height;
                 this.passed = false;
+                this.squashed = false;
+                this.squashTimer = 0;
+                this.opacity = 1;
             }
 
             update() {
                 this.x -= gameSpeed;
+                
+                // Squash animation
+                if (this.squashed) {
+                    this.squashTimer++;
+                    // Squash the obstacle down
+                    if (this.height > 10) {
+                        this.height -= 3;
+                        this.y = ground.y - this.height;
+                    }
+                    // Fade out
+                    this.opacity -= 0.05;
+                }
             }
 
             draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                
                 if (obstacleImg.complete && obstacleImg.src) {
                     ctx.drawImage(obstacleImg, this.x, this.y, this.width, this.height);
                 } else {
                     ctx.fillStyle = '#e74c3c';
                     ctx.fillRect(this.x, this.y, this.width, this.height);
                 }
+                
+                ctx.restore();
+            }
+
+            squash() {
+                this.squashed = true;
             }
         }
 
@@ -411,36 +440,71 @@
                 obstacle.update();
                 obstacle.draw();
 
-                if (!obstacle.passed && obstacle.x + obstacle.width < dino.x) {
-                    obstacle.passed = true;
-                    score++;
-                    scoreElement.textContent = score;
-                    
-                    if (score % 10 === 0) {
-                        gameSpeed += 0.5;
+                if (!obstacle.squashed) {
+                    // Check for jump-on collision (landing on top)
+                    if (checkJumpOnCollision(dino, obstacle)) {
+                        obstacle.squash();
+                        kills++;
+                        killsElement.textContent = kills;
+                        score += 5; // Bonus points for squashing!
+                        scoreElement.textContent = score;
+                        // Give the dino a little bounce
+                        dino.velocityY = -8;
+                    }
+                    // Check for side collision (game over)
+                    else if (checkSideCollision(dino, obstacle)) {
+                        endGame();
+                    }
+
+                    // Regular pass scoring
+                    if (!obstacle.passed && obstacle.x + obstacle.width < dino.x) {
+                        obstacle.passed = true;
+                        score++;
+                        scoreElement.textContent = score;
+                        
+                        if (score % 10 === 0) {
+                            gameSpeed += 0.5;
+                        }
                     }
                 }
 
-                if (checkCollision(dino, obstacle)) {
-                    endGame();
+                // Remove squashed obstacles after animation
+                if (obstacle.squashed && obstacle.squashTimer > 20) {
+                    obstacles.splice(index, 1);
                 }
-
-                if (obstacle.x + obstacle.width < 0) {
+                // Remove obstacles that went off screen
+                else if (obstacle.x + obstacle.width < 0) {
                     obstacles.splice(index, 1);
                 }
             });
         }
 
-        function checkCollision(dino, obstacle) {
-            return dino.x < obstacle.x + obstacle.width &&
-                   dino.x + dino.width > obstacle.x &&
-                   dino.y < obstacle.y + obstacle.height &&
-                   dino.y + dino.height > obstacle.y;
+        function checkJumpOnCollision(dino, obstacle) {
+            // Check if dino is falling down and lands on top of obstacle
+            const isAbove = dino.velocityY > 0; // Falling down
+            const horizontalOverlap = dino.x < obstacle.x + obstacle.width && 
+                                      dino.x + dino.width > obstacle.x;
+            const verticalOverlap = dino.y + dino.height > obstacle.y && 
+                                   dino.y + dino.height < obstacle.y + obstacle.height * 0.5;
+            
+            return isAbove && horizontalOverlap && verticalOverlap;
+        }
+
+        function checkSideCollision(dino, obstacle) {
+            // Check for side collision (hitting the obstacle from the side)
+            const horizontalOverlap = dino.x < obstacle.x + obstacle.width && 
+                                      dino.x + dino.width > obstacle.x;
+            const verticalOverlap = dino.y < obstacle.y + obstacle.height && 
+                                   dino.y + dino.height > obstacle.y;
+            const notJumpingOn = !(dino.velocityY > 0 && dino.y + dino.height < obstacle.y + obstacle.height * 0.5);
+            
+            return horizontalOverlap && verticalOverlap && notJumpingOn;
         }
 
         function endGame() {
             gameRunning = false;
             finalScoreElement.textContent = score;
+            finalKillsElement.textContent = kills;
             gameOverScreen.style.display = 'block';
 
             if (score > highScore) {
@@ -453,7 +517,9 @@
         function restartGame() {
             gameOverScreen.style.display = 'none';
             score = 0;
+            kills = 0;
             scoreElement.textContent = score;
+            killsElement.textContent = kills;
             obstacles = [];
             frameCount = 0;
             gameSpeed = 5;
