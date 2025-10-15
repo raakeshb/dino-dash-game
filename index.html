@@ -88,11 +88,37 @@
             background: #2980b9;
             transform: scale(1.05);
         }
+
+        .upload-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .upload-section input {
+            margin: 10px;
+        }
+
+        .upload-section label {
+            display: block;
+            margin: 10px 0;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>🦖 Dino Dash</h1>
+        <h1>🎮 Custom Jump Game</h1>
+        
+        <div class="upload-section">
+            <label>Upload Player Image:</label>
+            <input type="file" id="playerImage" accept="image/*">
+            <label>Upload Obstacle Image:</label>
+            <input type="file" id="obstacleImage" accept="image/*">
+        </div>
+        
         <canvas id="gameCanvas" class="game-canvas" width="800" height="400"></canvas>
         <div class="score-board">
             Score: <span id="score">0</span> | High Score: <span id="highScore">0</span>
@@ -114,6 +140,10 @@
         const gameOverScreen = document.getElementById('gameOverScreen');
         const finalScoreElement = document.getElementById('finalScore');
 
+        let playerImg = new Image();
+        let obstacleImg = new Image();
+        let imagesLoaded = 0;
+
         let gameRunning = false;
         let score = 0;
         let highScore = localStorage.getItem('dinoHighScore') || 0;
@@ -122,13 +152,12 @@
         const dino = {
             x: 50,
             y: 300,
-            width: 40,
-            height: 50,
+            width: 60,
+            height: 80,
             velocityY: 0,
             gravity: 0.6,
             jumpPower: -12,
-            isJumping: false,
-            color: '#2ecc71'
+            isJumping: false
         };
 
         const ground = {
@@ -141,13 +170,47 @@
         let frameCount = 0;
         let gameSpeed = 5;
 
+        // Handle image uploads
+        document.getElementById('playerImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    playerImg.src = event.target.result;
+                    playerImg.onload = checkImagesLoaded;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('obstacleImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    obstacleImg.src = event.target.result;
+                    obstacleImg.onload = checkImagesLoaded;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function checkImagesLoaded() {
+            if (playerImg.complete && obstacleImg.complete && playerImg.src && obstacleImg.src) {
+                if (!gameRunning) {
+                    init();
+                    gameRunning = true;
+                    gameLoop();
+                }
+            }
+        }
+
         class Obstacle {
             constructor() {
-                this.width = 30;
-                this.height = Math.random() > 0.5 ? 50 : 70;
+                this.width = 50;
+                this.height = 70;
                 this.x = canvas.width;
                 this.y = ground.y - this.height;
-                this.color = '#e74c3c';
                 this.passed = false;
             }
 
@@ -156,11 +219,12 @@
             }
 
             draw() {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.strokeStyle = '#c0392b';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(this.x, this.y, this.width, this.height);
+                if (obstacleImg.complete && obstacleImg.src) {
+                    ctx.drawImage(obstacleImg, this.x, this.y, this.width, this.height);
+                } else {
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
             }
         }
 
@@ -199,16 +263,12 @@
         }
 
         function drawDino() {
-            ctx.fillStyle = dino.color;
-            ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
-            
-            ctx.fillStyle = '#27ae60';
-            ctx.fillRect(dino.x, dino.y, dino.width, 10);
-            
-            ctx.fillStyle = 'white';
-            ctx.fillRect(dino.x + 25, dino.y + 10, 8, 8);
-            ctx.fillStyle = 'black';
-            ctx.fillRect(dino.x + 27, dino.y + 12, 4, 4);
+            if (playerImg.complete && playerImg.src) {
+                ctx.drawImage(playerImg, dino.x, dino.y, dino.width, dino.height);
+            } else {
+                ctx.fillStyle = '#2ecc71';
+                ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
+            }
         }
 
         function drawGround() {
@@ -330,25 +390,21 @@
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
-                if (!gameRunning) {
+                if (!gameRunning && playerImg.src && obstacleImg.src) {
                     restartGame();
-                } else {
+                } else if (gameRunning) {
                     jump();
                 }
             }
         });
 
         canvas.addEventListener('click', () => {
-            if (!gameRunning) {
+            if (!gameRunning && playerImg.src && obstacleImg.src) {
                 restartGame();
-            } else {
+            } else if (gameRunning) {
                 jump();
             }
         });
-
-        init();
-        gameRunning = true;
-        gameLoop();
     </script>
 </body>
 </html>
