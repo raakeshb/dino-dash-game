@@ -106,9 +106,60 @@
             margin: 10px 0;
             font-weight: bold;
         }
+
+        .music-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .music-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+
+        .music-btn:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .music-btn.muted {
+            background: #e74c3c;
+        }
+
+        .volume-control {
+            margin-top: 10px;
+        }
+
+        .volume-control input {
+            width: 100%;
+        }
     </style>
 </head>
 <body>
+    <div class="music-controls">
+        <div>
+            <label style="font-weight: bold; margin-bottom: 10px; display: block;">🎵 Background Music</label>
+            <input type="file" id="musicUpload" accept="audio/*" style="margin-bottom: 10px;">
+        </div>
+        <button id="muteBtn" class="music-btn" onclick="toggleMute()">🔊 Mute</button>
+        <div class="volume-control">
+            <label>Volume: <span id="volumeLabel">50</span>%</label>
+            <input type="range" id="volumeSlider" min="0" max="100" value="50" oninput="changeVolume(this.value)">
+        </div>
+    </div>
+
     <div class="game-container">
         <h1>🎮 Custom Jump Game</h1>
         
@@ -132,6 +183,8 @@
         </div>
     </div>
 
+    <audio id="bgMusic" loop></audio>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -139,15 +192,22 @@
         const highScoreElement = document.getElementById('highScore');
         const gameOverScreen = document.getElementById('gameOverScreen');
         const finalScoreElement = document.getElementById('finalScore');
+        const bgMusic = document.getElementById('bgMusic');
+        const muteBtn = document.getElementById('muteBtn');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeLabel = document.getElementById('volumeLabel');
 
         let playerImg = new Image();
         let obstacleImg = new Image();
-        let imagesLoaded = 0;
+        let isMuted = false;
 
         let gameRunning = false;
         let score = 0;
         let highScore = localStorage.getItem('dinoHighScore') || 0;
         highScoreElement.textContent = highScore;
+
+        // Set initial volume
+        bgMusic.volume = 0.5;
 
         const dino = {
             x: 50,
@@ -169,6 +229,39 @@
         let clouds = [];
         let frameCount = 0;
         let gameSpeed = 5;
+
+        // Handle music upload
+        document.getElementById('musicUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    bgMusic.src = event.target.result;
+                    bgMusic.play().catch(e => {
+                        console.log('Audio autoplay prevented. Click to start music.');
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Music controls
+        function toggleMute() {
+            isMuted = !isMuted;
+            bgMusic.muted = isMuted;
+            if (isMuted) {
+                muteBtn.textContent = '🔇 Unmute';
+                muteBtn.classList.add('muted');
+            } else {
+                muteBtn.textContent = '🔊 Mute';
+                muteBtn.classList.remove('muted');
+            }
+        }
+
+        function changeVolume(value) {
+            bgMusic.volume = value / 100;
+            volumeLabel.textContent = value;
+        }
 
         // Handle image uploads
         document.getElementById('playerImage').addEventListener('change', function(e) {
@@ -200,6 +293,10 @@
                 if (!gameRunning) {
                     init();
                     gameRunning = true;
+                    // Try to play music when game starts
+                    if (bgMusic.src) {
+                        bgMusic.play().catch(e => console.log('Music autoplay prevented'));
+                    }
                     gameLoop();
                 }
             }
@@ -364,6 +461,10 @@
             dino.velocityY = 0;
             dino.isJumping = false;
             gameRunning = true;
+            // Resume music if it was playing
+            if (bgMusic.src && bgMusic.paused) {
+                bgMusic.play().catch(e => console.log('Music autoplay prevented'));
+            }
             gameLoop();
         }
 
@@ -405,6 +506,13 @@
                 jump();
             }
         });
+
+        // Enable music on first user interaction
+        document.addEventListener('click', function enableMusic() {
+            if (bgMusic.src && bgMusic.paused && gameRunning) {
+                bgMusic.play().catch(e => console.log('Could not play music'));
+            }
+        }, { once: false });
     </script>
 </body>
 </html>
